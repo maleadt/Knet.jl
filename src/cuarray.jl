@@ -1,15 +1,7 @@
-# This is from https://github.com/JuliaGPU/CUDAapi.jl/pull/84/files
+using CUDA: CUDA, CuPtr, unsafe_free!, usage_limit
+import CUDA: CuArray
 
-if has_cuda()
-    try
-        using CuArrays: CuArrays, CuPtr, unsafe_free!, usage_limit
-        import CuArrays: CuArray
-    catch ex
-        @warn "CUDA is installed, but CuArrays.jl fails to load" exception=(ex,catch_backtrace())
-    end
-end
-
-### Use CuArrays kernels as fallback for undefined KnetArray operations.
+### Use CUDA.jl kernels as fallback for undefined KnetArray operations.
 
 import Base: getindex, setindex!, permutedims, permutedims!, cat, hcat, vcat
 
@@ -49,7 +41,7 @@ function permutedims(B::KnetArray,perm)
     permutedims!(P,B,perm)
 end
 
-#permutedims(x::KnetMatrix)=permutedims(x,(2,1))  # CuArrays is %10 faster but has startup cost
+#permutedims(x::KnetMatrix)=permutedims(x,(2,1))  # CUDA.jl is %10 faster but has startup cost
 permutedims(x::KnetMatrix)=_transpose(x)          # cuDNN is %10 slower but no startup cost
 permutedims(x::KnetVector)=copy(reshape(x,1,:))
 
@@ -79,12 +71,12 @@ end
 if has_cuda()
     function KnetArray(x::CuArray{T,N}) where {T,N}
         p = Base.bitcast(Knet.Cptr, x.ptr)
-        k = Knet.KnetPtr(p, sizeof(x), gpu(), x) 
+        k = Knet.KnetPtr(p, sizeof(x), gpu(), x)
         KnetArray{T,N}(k, size(x))
     end
 end
 
-# Testing the CuArrays allocator: set Knet.cuallocator()=true to use this
+# Testing the CUDA.jl allocator: set Knet.cuallocator()=true to use this
 function KnetPtrCu(len::Int)
     c = CuArray{UInt8}(undef, len)
     p = convert(Cptr, convert(UInt, Base.unsafe_convert(CuPtr{UInt8}, Base.cconvert(CuPtr{UInt8}, c))))
@@ -111,7 +103,7 @@ end
 # argmax, argmin etc. Fixes https://github.com/denizyuret/Knet.jl/issues/368.
 # Two options: argmax(Array(KnetArray)) vs argmax(CuArray)
 # Experiments: 10x10, 100x100, 1000x1000 with no dims, dims=1, dims=2
-# With no dims, CuArrays is better for 100x100, 1000x1000.
+# With no dims, CUDA.jl is better for 100x100, 1000x1000.
 # With all others, KnetArray is better.
 
 import Base: argmax, argmin, findmax, findmin

@@ -133,7 +133,7 @@ function binary_op(f, j=f, o...)
             broadcasted(::typeof($J),x::Bcasted{$T}, y::KnetArray{$T}) = broadcasted($J, x.value, y) |> Bcasted
         end # @eval
     end # for
-    @eval begin # so we do not trigger some default Base implementation 
+    @eval begin # so we do not trigger some default Base implementation
         ($M).$J(x::Bcasted, y::Bcasted) = throw(MethodError($J,(x,y)))
         ($M).$J(x, y::Bcasted) = throw(MethodError($J,(x,y)))
         ($M).$J(x::Bcasted, y) = throw(MethodError($J,(x,y)))
@@ -257,7 +257,7 @@ broadcasted(::typeof(max),s::Number,a::KnetArray{T}) where {T} = max.(T(s),a)
 broadcasted(::typeof(min),a::KnetArray{T},s::Number) where {T} = min.(T(s),a)
 broadcasted(::typeof(min),s::Number,a::KnetArray{T}) where {T} = min.(T(s),a)
 
-# ^ does not work with cuda, trying to solve in cuarrays.jl (Issue #108)
+# ^ does not work with cuda, trying to solve in CUDA.jl (JuliaGPU/CuArrays.jl#108)
 # broadcasted(::typeof(^),s::Number,a::KnetArray{T}) where {T} = (.^)(T(s),a)
 # Pow is the one exception, we need to define a separate kernel:
 # rpow(s,a)=a^s # only broadcast#rpow is defined above, we need rpow defined
